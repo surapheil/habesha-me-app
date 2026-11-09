@@ -1,0 +1,126 @@
+[
+  {
+    "full_name": "Asqual Kirios",
+    "short_name": "Asqual K.",
+    "initials": "AK",
+    "job_title": "MARKETING_MANAGER",
+    "role": "management",
+    "employee_id": "HBX-A8QAAJS5",
+    "password": "HBX-A8QAAJS5",
+    "brands": []
+  },
+  {
+    "full_name": "Eyob Hailu",
+    "short_name": "Eyob H.",
+    "initials": "EH",
+    "job_title": "MARKETING_DIRECTOR",
+    "role": "management",
+    "employee_id": "HBX-8E9TK8ZE",
+    "password": "fR&7GR2kv83",
+    "brands": []
+  },
+  {
+    "full_name": "Salsabil Jemal",
+    "short_name": "Salsabil J.",
+    "initials": "SJ",
+    "job_title": "MARKETING_EFFECTIVENESS_LEAD",
+    "role": "owner_admin",
+    "employee_id": "HBX-2FFCXNVB",
+    "password": "fR&VhEMy2ZLzrX",
+    "brands": []
+  },
+  {
+    "full_name": "Nina Ouandji",
+    "short_name": "Nina O.",
+    "initials": "NO",
+    "job_title": "MARKETING_MANAGER",
+    "role": "management",
+    "employee_id": "HBX-3JAHBX2X",
+    "password": "LCnxPRhvy#8ti",
+    "brands": []
+  },
+  {
+    "full_name": "Efrata Dagnachew",
+    "short_name": "Efrata D.",
+    "initials": "ED",
+    "job_title": "BRAND_COORDINATOR",
+    "role": "brand_manager",
+    "employee_id": "HBX-AY9RAHFX",
+    "brands": [
+      "Negus"
+    ]
+  },
+  {
+    "full_name": "Feven Yohanes",
+    "short_name": "Feven Y.",
+    "initials": "FY",
+    "job_title": "EXPERIENTIAL_MARKETING_COORDINATOR",
+    "role": "brand_manager",
+    "employee_id": "HBX-P6P2RP5S",
+    "brands": [
+      "Negus"
+    ]
+  },
+  {
+    "full_name": "Elshadie Haile",
+    "short_name": "Elshadie H.",
+    "initials": "EH",
+    "job_title": "BRAND_MANAGER",
+    "role": "brand_manager",
+    "employee_id": "HBX-N8BSY34M",
+    "brands": [
+      "Feta",
+      "Kidame"
+    ]
+  },
+  {
+    "full_name": "Mikiyas Worknehe",
+    "short_name": "Mikiyas W.",
+    "initials": "MW",
+    "job_title": "EXPERIENTIAL_MARKETING_COORDINATOR",
+    "role": "brand_manager",
+    "employee_id": "HBX-FNFQ85CK",
+    "brands": [
+      "Feta",
+      "Kidame"
+    ]
+  },
+  {
+    "full_name": "Lidya Tewodrose",
+    "short_name": "Lidya T.",
+    "initials": "LT",
+    "job_title": "CONTENT_AND_CREATIVE_MANAGER",
+    "role": "brand_manager",
+    "employee_id": "HBX-CV32S8Q6",
+    "brands": [
+      "Habesha",
+      "Habesha Kostara",
+      "Habesha Draught"
+    ]
+  },
+  {
+    "full_name": "Hiruteamlak Dejen",
+    "short_name": "Hiruteamlak D.",
+    "initials": "HD",
+    "job_title": "CONTENT_AND_CREATIVE_OFFICER",
+    "role": "brand_manager",
+    "employee_id": "HBX-8GYFWJ72",
+    "brands": [
+      "Feta",
+      "Kidame"
+    ]
+  },
+  {
+    "full_name": "Betelhem Birhanu",
+    "short_name": "Betelhem B.",
+    "initials": "BB",
+    "job_title": "EXPERIENTIAL_MARKETING_COORDINATOR",
+    "role": "brand_manager",
+    "employee_id": "HBX-QB2H5X6R",
+    "brands": [
+      "Habesha",
+      "Habesha Kostara",
+      "Habesha Draught"
+    ]
+  }
+]
