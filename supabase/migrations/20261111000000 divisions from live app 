@@ -1,0 +1,7 @@
+-- Align divisions with the live reference app: add its 7 divisions, retire the old names
+-- (kept for history, logical deactivation per FR-203-001).
+insert into public.divisions (name) values
+  ('Addis Ababa'), ('Central'), ('East'), ('North East'), ('North West'), ('South'), ('West')
+on conflict (name) do update set active = true;
+update public.divisions set active = false
+where name not in ('Addis Ababa', 'Central', 'East', 'North East', 'North West', 'South', 'West');

@@ -1,0 +1,110 @@
+-- Step 2 of 2: brand managers can edit an activity after submission or approval.
+-- Editing takes it back ("reopened"), the previous decision is cleared, and it must be submitted again
+-- for approval. Every step, and every edit, stays in the history log.
+
+create or replace function public.reopen_activity(p_activity uuid) returns public.activities
+language plpgsql security definer set search_path = public, app as $$
+declare
+  a public.activities;
+  previous public.activity_status;
+begin
+  select * into a from public.activities where id = p_activity for update;
+  if not found or a.owner_id <> auth.uid() or app.my_role() is null then
+    raise exception 'Activity not found.' using errcode = 'P0002';
+  end if;
+  if a.status not in ('submitted', 'validated') then
+    raise exception 'Only a submitted or approved activity can be reopened for editing.' using errcode = 'P0001';
+  end if;
+  previous := a.status;
+  update public.activities
+     set status = 'reopened', decided_at = null, decided_by = null, decision_comment = null
+   where id = a.id
+   returning * into a;
+  insert into public.activity_history (activity_id, event, actor_id, old_status, new_status)
+  values (a.id, 'Reopened for editing', auth.uid(), previous, 'reopened');
+  return a;
+end $$;
+revoke execute on function public.reopen_activity(uuid) from public, anon;
+grant execute on function public.reopen_activity(uuid) to authenticated;
+
+drop policy if exists "owners edit drafts and rejected activities" on public.activities;
+create policy "owners edit drafts, rejected and reopened activities" on public.activities for update to authenticated
+  using (owner_id = auth.uid() and status in ('draft', 'rejected', 'reopened') and app.my_role() is not null)
+  with check (owner_id = auth.uid() and (brand is null or app.can_see_brand(brand)));
+
+create or replace function public.submit_activity(p_activity uuid) returns public.activities
+language plpgsql security definer set search_path = public, app as $$
+declare
+  a public.activities;
+  previous public.activity_status;
+  missing text[] := '{}';
+begin
+  select * into a from public.activities where id = p_activity for update;
+  if not found or a.owner_id <> auth.uid() or app.my_role() is null then
+    raise exception 'Activity not found.' using errcode = 'P0002';
+  end if;
+  if a.status not in ('draft', 'rejected', 'reopened') then
+    raise exception 'Only a draft, rejected or reopened activity can be submitted.' using errcode = 'P0001';
+  end if;
+  if coalesce(trim(a.activity_name), '') = '' then missing := array_append(missing, 'activity name'); end if;
+  if a.brand is null then missing := array_append(missing, 'brand'); end if;
+  if cardinality(a.division) = 0 then missing := array_append(missing, 'division'); end if;
+  if coalesce(trim(a.city), '') = '' then missing := array_append(missing, 'city'); end if;
+  if a.start_date is null then missing := array_append(missing, 'start date'); end if;
+  if a.end_date is null then missing := array_append(missing, 'end date'); end if;
+  if cardinality(missing) > 0 then
+    raise exception 'Missing mandatory fields: %.', array_to_string(missing, ', ') using errcode = 'P0001';
+  end if;
+  if not app.can_see_brand(a.brand) then
+    raise exception 'You can only submit activities for your assigned brands.' using errcode = '42501';
+  end if;
+  previous := a.status;
+  update public.activities
+     set status = 'submitted', submitted_at = now(), decided_at = null, decided_by = null, decision_comment = null
+   where id = a.id
+   returning * into a;
+  insert into public.activity_history (activity_id, event, actor_id, old_status, new_status)
+  values (a.id, case when exists (select 1 from public.activity_history h where h.activity_id = a.id and h.event in ('Submitted', 'Resubmitted')) then 'Resubmitted' else 'Submitted' end,
+          auth.uid(), previous, 'submitted');
+  return a;
+end $$;
+
+create or replace function public.cancel_activity(p_activity uuid, p_comment text default null) returns public.activities
+language plpgsql security definer set search_path = public, app as $$
+declare
+  a public.activities;
+  previous public.activity_status;
+begin
+  select * into a from public.activities where id = p_activity for update;
+  if not found or not (a.owner_id = auth.uid() and app.my_role() is not null or (app.is_approver() and app.can_see_brand(a.brand))) then
+    raise exception 'Activity not found.' using errcode = 'P0002';
+  end if;
+  if a.status not in ('submitted', 'validated', 'rejected', 'reopened') then
+    raise exception 'This activity can no longer be cancelled.' using errcode = 'P0001';
+  end if;
+  previous := a.status;
+  update public.activities set status = 'cancelled' where id = a.id returning * into a;
+  insert into public.activity_history (activity_id, event, actor_id, comment, old_status, new_status)
+  values (a.id, 'Cancelled', auth.uid(), nullif(trim(coalesce(p_comment, '')), ''), previous, 'cancelled');
+  return a;
+end $$;
+
+-- Trace field-by-field edits made after a rejection or after reopening.
+create or replace function app.log_activity_change() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  diff jsonb;
+begin
+  if tg_op = 'INSERT' then
+    insert into public.activity_history (activity_id, event, actor_id, new_status)
+    values (new.id, 'Created', auth.uid(), new.status);
+  elsif old.status in ('rejected', 'reopened') and new.status = old.status and new.answers is distinct from old.answers then
+    select jsonb_object_agg(k, jsonb_build_object('old', old.answers -> k, 'new', new.answers -> k))
+      into diff
+    from jsonb_object_keys(old.answers || new.answers) as k
+    where old.answers -> k is distinct from new.answers -> k;
+    insert into public.activity_history (activity_id, event, actor_id, changes)
+    values (new.id, 'Edited', auth.uid(), diff);
+  end if;
+  return null;
+end $$;

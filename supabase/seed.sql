@@ -3,5 +3,5 @@ insert into public.brands (name) values
   ('Habesha'), ('Habesha Kostara'), ('Habesha Draught'), ('Negus'), ('Feta'), ('Kidame')
 on conflict (name) do nothing;
 insert into public.divisions (name) values
-  ('Addis'), ('Central'), ('South'), ('Near East'), ('Far East'), ('West'), ('Northeast'), ('NW - Gojjam'), ('NW - Gondar'), ('National')
+  ('Addis Ababa'), ('Central'), ('East'), ('North East'), ('North West'), ('South'), ('West')
 on conflict (name) do nothing;

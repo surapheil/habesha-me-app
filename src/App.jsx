@@ -139,9 +139,9 @@ const modules = [
   {
     id: "activities",
     title: "Manage activities",
-    description: <>1 active<br />2 awaiting approval</>,
+    description: null, // filled with live counts in ModulesSection
     icon: "activity",
-    notification: true,
+    notification: false,
   },
   {
     id: "results",
@@ -255,7 +255,35 @@ function ModuleCard({ module, onOpen }) {
   );
 }
 
-function ModulesSection({ onOpen }) {
+// Live counts for the "Manage activities" card: only the signed-in brand manager's own activities.
+// Active = approved and not yet completed or cancelled; awaiting approval = submitted.
+function ModulesSection({ onOpen, user, api = fieldApi }) {
+  const [summary, setSummary] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    api.listActivities()
+      .then(all => {
+        if (cancelled) return;
+        const records = all.filter(record => record.ownerId === user?.id);
+        setSummary({
+          active: records.filter(record => record.status === "validated" || record.status === "in_progress").length,
+          pending: records.filter(record => record.status === "submitted").length,
+          rejected: records.filter(record => record.status === "rejected").length,
+        });
+      })
+      .catch(() => { if (!cancelled) setSummary({ error: true }); });
+    return () => { cancelled = true; };
+  }, [api, user?.id]);
+
+  const cards = modules.map(module => module.id !== "activities" ? module : {
+    ...module,
+    description: !summary ? <>Loading…<br />&nbsp;</>
+      : summary.error ? <>Couldn’t load the counts.<br />Open to see your activities.</>
+      : <>{summary.active} active<br />{summary.pending} awaiting approval</>,
+    // The red dot flags rejected activities, which need the brand manager to edit and resubmit.
+    notification: Boolean(summary && !summary.error && summary.rejected > 0),
+  });
+
   return (
     <section className="modules-section">
       <h2 className="section-label">MODULES</h2>
@@ -270,7 +298,7 @@ function ModulesSection({ onOpen }) {
           <span>Create activation</span>
         </button>
 
-        {modules.map((module) => (
+        {cards.map((module) => (
           <ModuleCard
             key={module.id}
             module={module}
@@ -306,21 +334,41 @@ function BottomNavigation({ activePage, onNavigate }) {
 }
 
 const BRANDS = ["Habesha", "Habesha Kostara", "Habesha Draught", "Negus", "Feta", "Kidame"];
-const DIVISIONS = ["Addis", "Central", "South", "Near East", "Far East", "West", "Northeast", "NW - Gojjam", "NW - Gondar", "National"];
+const DIVISIONS = ["Addis Ababa", "Central", "East", "North East", "North West", "South", "West"];
 const STATUS_LABELS = {
   submitted: "PENDING",
   validated: "APPROVED",
   rejected: "REJECTED",
+  reopened: "BEING EDITED",
   in_progress: "IN PROGRESS",
   completed: "COMPLETED",
   cancelled: "CANCELLED",
 };
 const statusLabel = (status) => STATUS_LABELS[status] || "PENDING";
 const statusClass = (status) => `status-${(STATUS_LABELS[status] || "PENDING").toLowerCase().replace(" ", "-")}`;
+// Divisions and their cities, as on the live reference app (screenshots of 11 Nov 2026).
+const DIVISION_CITIES = {
+  "Addis Ababa": ["Addis-Abeba", "Burayu", "Sebeta"],
+  "Central": ["Alamata", "Alem Ketema", "Debre Berhan", "Deneba", "Dessie", "Kombolcha", "Logia", "Mehal Meda", "Mekane Selam", "Mersa", "Sekota", "Shewa Robit", "Weldiya"],
+  "East": ["Adama", "Assella", "Awash 40", "Bale Ginir", "Balé Robe", "Bishoftu", "Chelenko", "Chiro", "Dire Dawa", "Djidjiga", "Harar", "Minjar", "Mojo"],
+  "North East": ["A. Enticho", "Abiy Addi", "Adi Daro", "Adi Hageray", "Adi Nebrid", "Adigebru", "Adigrat", "Adwa", "Aksoum", "Edaga Hamus T2", "Endabaguna", "Hawzen", "Hintsats", "Inda Selassié", "Kisad Gaba", "Lachi", "Mehoni", "Mekele", "Mekele T1", "Mekele T2", "Mekele T3", "Mekele T4", "Myhanse", "Quiha Adigudem T1", "Sheraro", "Shire 2", "T. Enticho", "Wukro", "Zana"],
+  "North West": ["Abderafi", "Abrha Jira", "Addis Zemen", "Adi Arkay", "Adi Goshu Baker", "Adi Remets Maygaba", "Ashire", "Azezo", "Baher Dar", "Bahir Dar 2", "Bahir Dar Abay Mado", "Bichena", "Bure", "Bure Kuchi", "Chagni", "Dabat", "Dangila", "Dangila 2", "Dansha", "Debark", "Debre Marqos", "Debre Tabor", "Delgi", "Ebinat", "Este", "Finote Selam", "Gilgel Beles", "Gondar", "Humera", "Jawi", "Kokit", "Kosober", "Lideta", "Maksegnit", "Maraki College", "May Kadra", "May Tsebri", "Merawi", "Metema", "Mirab Armachiho", "Mota", "Negade Bahir", "Piassa", "Quara", "Sanja", "Shaura", "Shehedi", "Shinfa", "Soroka", "Tikil Dingay", "Tilili", "Wembera", "Woreta"],
+  "South": ["Alaba Kulito", "Arba Minch", "Awasa", "Dila", "Hosaena", "Moyale", "Negele", "Sawla", "Shakiso", "Shashamané", "Sodo", "Yabelo", "Yirgalem"],
+  "West": ["Asosa", "Bonga", "Dima", "Gambela", "Hagere Hiywet", "Jimma", "Metu", "Mizan Teferi", "Shabench", "Tepi", "Waliso", "Welkite"],
+};
+const ALL_CITIES = [...new Set(Object.values(DIVISION_CITIES).flat())];
+const divisionsAllMapped = (selected) => selected.length > 0 && selected.every(item => DIVISION_CITIES[item]);
+// No division selected: every city. Otherwise: the cities of the selected divisions only.
+const citiesFor = (selected) => !selected.length ? ALL_CITIES : [...new Set([
+  ...selected.flatMap(item => DIVISION_CITIES[item] || []),
+  ...(divisionsAllMapped(selected) ? [] : ALL_CITIES),
+])];
+// Question bank spine, U19 "How will the primary KPI be measured?" (row 30).
+const MEASUREMENT_OPTIONS = ["Field count sheet", "QR post-event survey", "QR survey + field count", "Outlet depletion / crates sold", "Trade census / outlet check", "Platform analytics (digital)", "Media post-buy report", "Brand health / campaign recall study", "Partner rights-delivery checklist", "Draught throughput log", "Sampling tally + purchase check", "FGD / interview guide", "Other"];
 const EIGHT_STEP_TYPES = ["Sponsorship", "Trade/POS", "Media/ATL", "Partnership"];
 const stepCountFor = (type) => type === "Other" ? 6 : EIGHT_STEP_TYPES.includes(type) ? 8 : 7;
 
-function CreateActivation({ onClose, initialActivity = null, approverMode = false, onDecision, currentUser = null, api = fieldApi, people = [] }) {
+function CreateActivation({ onClose, onHome, initialActivity = null, approverMode = false, onDecision, currentUser = null, api = fieldApi, people = [] }) {
   // Stage 0 is the activity-type selection.
   // Stage 1 is "The activity".
   // Stage 2 is "Strategy and timing"; stage 3 is "Ownership".
@@ -351,7 +399,7 @@ function CreateActivation({ onClose, initialActivity = null, approverMode = fals
   // Step 3: Ownership
   const [accountablePerson, setAccountablePerson] = useState(currentUser?.name || "Mikias Workneh");
   const [counterpartRequired, setCounterpartRequired] = useState("required");
-  const [counterparts, setCounterparts] = useState(["Other"]);
+  const [counterparts, setCounterparts] = useState([]);
   const [counterpartOpen, setCounterpartOpen] = useState(false);
   const [otherCounterpartInput, setOtherCounterpartInput] = useState("");
   const [otherCounterparts, setOtherCounterparts] = useState([]);
@@ -687,8 +735,14 @@ function CreateActivation({ onClose, initialActivity = null, approverMode = fals
     "Build attribute association", "Amplify claim / word of mouth",
     "Event engagement quality", "Outlet visibility (with trade)", "Insight / data capture"
   ];
-  const evidenceOptions = isSponsorship ? sponsorshipEvidenceOptions : isTradePos ? tradeProofOptions : isSampling ? samplingEvidenceOptions : isMedia ? mediaEvidenceOptions : isPartnership ? partnerEvidenceOptions : outcomeOptions;
-  const evidenceLabel = isSponsorship ? "What evidence will the sponsor or rights holder submit?" : isTradePos ? "What proof is required from the field?" : isSampling ? "What evidence is required?" : isMedia ? "What evidence must the media or agency partner submit?" : isPartnership ? "What must the partner submit before final payment or renewal?" : "What evidence will outlets or the draught team submit?";
+  // Evidence question per activity type (Question Bank v3, block F): EA10, SP12, TP11, DA10, SA10, PA10, MA12.
+  // "Other" has no evidence question in v3, so none is asked.
+  const isEvents = activityType === "Events/Activations";
+  const eventsEvidenceOptions = ["Attendance count", "Photos/videos", "Sampling tally", "Sales/depletion", "Rights-delivery checklist", "Consumer survey", "Final report"];
+  const draughtEvidenceOptions = ["Active-tap log", "Throughput log", "Trial tally", "Reorder record", "Outlet feedback", "Photos", "Final report"];
+  const hasEvidenceQuestion = !isOther;
+  const evidenceOptions = isSponsorship ? sponsorshipEvidenceOptions : isTradePos ? tradeProofOptions : isSampling ? samplingEvidenceOptions : isMedia ? mediaEvidenceOptions : isPartnership ? partnerEvidenceOptions : isEvents ? eventsEvidenceOptions : draughtEvidenceOptions;
+  const evidenceLabel = isSponsorship ? "What evidence will the sponsor or rights holder submit?" : isTradePos ? "What proof is required from the field?" : isSampling ? "What evidence is required?" : isMedia ? "What evidence must the media or agency partner submit?" : isPartnership ? "What must the partner submit before final payment or renewal?" : isEvents ? "What evidence must the delivery partner submit?" : "What evidence will outlets or the draught team submit?";
   const businessDecisions = [
     "Scale nationally", "Scale regionally", "Repeat next cycle", "Refine execution",
     "Increase investment", "Decrease investment", "Stop activity"
@@ -756,7 +810,7 @@ function CreateActivation({ onClose, initialActivity = null, approverMode = fals
     baselineUnit !== "" && isVolume(baselineVolume) && repeatObservation !== "";
 
   const isStep7Valid = primaryKpi !== "" && successUnit !== "" && isVolume(successValue) &&
-    measurementMethod !== "" && submittedEvidence.length > 0;
+    measurementMethod !== "" && (!hasEvidenceQuestion || submittedEvidence.length > 0);
 
   const addOtherCounterpart = () => {
     const name = otherCounterpartInput.trim();
@@ -770,7 +824,7 @@ function CreateActivation({ onClose, initialActivity = null, approverMode = fals
 
   const saveDraft = async (automatic = false) => {
     if (approverMode || busy) return;
-    if (automatic && (draftSaved || !activityType || stage < 1 || savedRecord)) return;
+    if (automatic === true && (draftSaved || !activityType || stage < 1 || savedRecord)) return;
     const draft = {
       ...collectRecord(),
       stage,
@@ -937,11 +991,36 @@ function CreateActivation({ onClose, initialActivity = null, approverMode = fals
     }
   };
 
-  // FR-101-012: not editable by the brand manager after submission; a rejected activity can be edited and resubmitted.
-  const canEdit = !savedRecord || savedRecord.status === "rejected";
-  const lockMessage = savedRecord?.status === "submitted" ? "Submitted activities can't be edited while they wait for a decision."
-    : savedRecord?.status === "validated" ? "Approved activities can no longer be edited."
-    : savedRecord?.status === "cancelled" ? "Cancelled activities can no longer be edited." : "";
+  // Feedback 9/11: an activity can be edited after submission or approval; editing reopens it and it must be
+  // submitted again for approval. Every step stays in the history log.
+  const status = savedRecord?.status;
+  const canEdit = !savedRecord || status === "rejected" || status === "reopened";
+  const canReopen = status === "submitted" || status === "validated";
+  const lockMessage = canReopen ? "Editing sends this activity back for approval."
+    : status === "reopened" ? "Being edited: submit it again to send it for approval."
+    : status === "cancelled" ? "Cancelled activities can no longer be edited." : "";
+  const startEditing = async (targetStage) => {
+    if (canReopen) {
+      if (!window.confirm("Editing sends this activity back for approval. Continue?")) return;
+      setBusy(true);
+      setActionError("");
+      try {
+        setSavedRecord(await api.reopen(savedRecord.id));
+      } catch (error) {
+        setActionError(error.message);
+        setBusy(false);
+        return;
+      }
+      setBusy(false);
+    }
+    setActivityCompleted(false);
+    setStage(targetStage);
+  };
+  // Home: keep unsaved work first.
+  const goHome = async () => {
+    if (!draftSaved && activityType && stage >= 1 && canEdit) await saveDraft(false);
+    onHome();
+  };
   const historyEntries = [...(savedRecord?.history || [])].reverse();
   const renderHistory = () => (
     <section className="post-history"><span>HISTORY</span>
@@ -1058,7 +1137,7 @@ function CreateActivation({ onClose, initialActivity = null, approverMode = fals
     ...(typeSectionsByType[activityType] || defaultTypeSections),
     {title: "Measuring success", rows: [
       ["Primary KPI", primaryKpi], ["Success target", `${successValue} ${successUnit}`],
-      ["Measurement method", measurementMethod], ["Evidence submitted", submittedEvidence],
+      ["Measurement method", measurementMethod], ...(hasEvidenceQuestion ? [["Evidence submitted", submittedEvidence]] : []),
       ["Business decision", businessDecision]]},
   ];
 
@@ -1084,11 +1163,14 @@ function CreateActivation({ onClose, initialActivity = null, approverMode = fals
 
   return (
     <div className="activation-page">
-      {stage !== postStage && !approverMode && <header className="activation-header">
+      {stage !== postStage && !approverMode && <header className={`activation-header ${onHome ? "with-home" : ""}`}>
+        {onHome && <button type="button" className="activation-home-button" onClick={goHome} aria-label="Go to the home page">
+          <Icon name="home" size={19} />
+        </button>}
         <button
           className="save-draft-button"
           type="button"
-          onClick={saveDraft}
+          onClick={() => saveDraft(false)}
         >
           {draftSaved ? "Saved" : "Save in draft"}
           <Icon name="edit" size={16} />
@@ -1120,7 +1202,7 @@ function CreateActivation({ onClose, initialActivity = null, approverMode = fals
               {savedRecord.decision.outcome === "rejected" && !approverMode && <p className="post-decision-hint">Edit the activity and submit it again.</p>}
             </section>}
             {summarySections.map((section, index) => <section className="post-section" key={section.title}>
-              <div className="post-section-head"><div><span className="post-index">{String(index + 1).padStart(2, "0")}</span><strong>{section.title}</strong></div>{canEdit && !approverMode && <button type="button" onClick={() => {setActivityCompleted(false); setStage(index + 1);}}><Icon name="edit" size={12}/> Edit</button>}</div>
+              <div className="post-section-head"><div><span className="post-index">{String(index + 1).padStart(2, "0")}</span><strong>{section.title}</strong></div>{(canEdit || canReopen) && !approverMode && <button type="button" disabled={busy} onClick={() => startEditing(index + 1)}><Icon name="edit" size={12}/> Edit</button>}</div>
               {section.rows.map(([label, value]) => <div className="post-data-row" key={label}><span>{label}</span><div>{Array.isArray(value) ? (value.length ? value.map(v => <span className="post-chip" key={v}>{v}</span>) : "—") : (value || "—")}</div></div>)}
             </section>)}
             {renderHistory()}
@@ -1134,7 +1216,7 @@ function CreateActivation({ onClose, initialActivity = null, approverMode = fals
               </div>
             </section>) : <>
               {lockMessage && <p className="post-lock-note">{lockMessage}</p>}
-              <div className="post-actions"><button type="button" disabled={activityCancelled || busy} onClick={cancelActivity}>Cancel ♧</button><button type="button" disabled={!canEdit} onClick={() => {setActivityCompleted(false); setStage(reviewStage);}}>Edit <Icon name="edit" size={13}/></button></div>
+              <div className="post-actions"><button type="button" disabled={activityCancelled || busy} onClick={cancelActivity}>Cancel ♧</button><button type="button" disabled={!(canEdit || canReopen) || busy} onClick={() => startEditing(reviewStage)}>Edit <Icon name="edit" size={13}/></button></div>
             </>}
           </> : <>
             <span className="post-overline">RESULT</span>
@@ -1338,11 +1420,11 @@ function CreateActivation({ onClose, initialActivity = null, approverMode = fals
                             type="checkbox"
                             checked={division.includes(item)}
                             onChange={(event) => {
-                              setDivision((previous) =>
-                                event.target.checked
-                                  ? [...previous, item]
-                                  : previous.filter((value) => value !== item)
-                              );
+                              const next = event.target.checked
+                                ? [...division, item]
+                                : division.filter((value) => value !== item);
+                              setDivision(next);
+                              if (city && divisionsAllMapped(next) && !citiesFor(next).includes(city)) setCity("");
                               setDraftSaved(false);
                             }}
                           />
@@ -1384,22 +1466,7 @@ function CreateActivation({ onClose, initialActivity = null, approverMode = fals
                 />
 
                 <datalist id="ethiopian-cities">
-                  {[
-                    "Addis Ababa",
-                    "Adama",
-                    "Bahir Dar",
-                    "Hawassa",
-                    "Mekelle",
-                    "Dire Dawa",
-                    "Gondar",
-                    "Jimma",
-                    "Dessie",
-                    "Harar",
-                    "Jijiga",
-                    "Shashamane",
-                    "Arba Minch",
-                    "Hosaena",
-                  ].map((item) => (
+                  {citiesFor(division).map((item) => (
                     <option key={item} value={item} />
                   ))}
                 </datalist>
@@ -1606,10 +1673,10 @@ function CreateActivation({ onClose, initialActivity = null, approverMode = fals
                   </button>
                   {measurementOpen && <div className="step7-dropdown-menu">
                     <input aria-label="Search measurement methods" placeholder="⌕  Search" value={measurementSearch} onChange={e => setMeasurementSearch(e.target.value)} />
-                    <div className="step7-dropdown-scroll">{(isEightStep ? sponsorshipVerificationOptions : outcomeOptions).filter(x => x.toLowerCase().includes(measurementSearch.toLowerCase())).map(x => <button type="button" key={x} onClick={() => {setMeasurementMethod(x); setMeasurementOpen(false); setDraftSaved(false);}}>{x}</button>)}</div>
+                    <div className="step7-dropdown-scroll">{(isSponsorship ? sponsorshipVerificationOptions : MEASUREMENT_OPTIONS).filter(x => x.toLowerCase().includes(measurementSearch.toLowerCase())).map(x => <button type="button" key={x} onClick={() => {setMeasurementMethod(x); setMeasurementOpen(false); setDraftSaved(false);}}>{x}</button>)}</div>
                   </div>}
                 </div>
-                <div className="form-field step7-dropdown-field">
+                {hasEvidenceQuestion && <div className="form-field step7-dropdown-field">
                   <label>{evidenceLabel} <span className="required-mark">*</span></label>
                   <button type="button" className="step7-dropdown-trigger" aria-expanded={evidenceOpen} onClick={() => {setEvidenceOpen(v => !v); setMeasurementOpen(false); setDecisionOpen(false);}}>
                     <span>{submittedEvidence.length ? `${submittedEvidence.length} selected` : "Select"}</span><span>{evidenceOpen ? "⌃" : "⌄"}</span>
@@ -1621,7 +1688,7 @@ function CreateActivation({ onClose, initialActivity = null, approverMode = fals
                       {evidenceOptions.filter(x => x.toLowerCase().includes(evidenceSearch.toLowerCase())).map(x => <label key={x} className="step7-checkbox-option"><input type="checkbox" checked={submittedEvidence.includes(x)} onChange={e => {setSubmittedEvidence(prev => e.target.checked ? [...prev, x] : prev.filter(v => v !== x)); setDraftSaved(false);}} />{x}</label>)}
                     </div>
                   </div>}
-                </div>
+                </div>}
                 <div className="form-field step7-dropdown-field">
                   <label>If this activity succeeds, what decision should the evidence help the business make?</label>
                   <button type="button" className="step7-dropdown-trigger" aria-expanded={decisionOpen} onClick={() => {setDecisionOpen(v => !v); setEvidenceOpen(false); setMeasurementOpen(false);}}>
@@ -2267,7 +2334,7 @@ function ActivitiesList({ onCreate, onOpen, api = fieldApi }) {
       <input className="activities-search" aria-label="Search activities" placeholder="⌕  Search" value={search} onChange={e => setSearch(e.target.value)} />
       <div className="activities-filters">
         <select aria-label="Activity type" value={type} onChange={e => setType(e.target.value)}><option value="">Activity type</option>{[...new Set(items.map(x => x.activityType).filter(Boolean))].map(x => <option key={x}>{x}</option>)}</select>
-        <select aria-label="Activity status" value={status} onChange={e => setStatus(e.target.value)}><option value="">Activity status</option><option value="submitted">Pending</option><option value="validated">Approved</option><option value="rejected">Rejected</option><option value="cancelled">Cancelled</option></select>
+        <select aria-label="Activity status" value={status} onChange={e => setStatus(e.target.value)}><option value="">Activity status</option><option value="submitted">Pending</option><option value="validated">Approved</option><option value="rejected">Rejected</option><option value="reopened">Being edited</option><option value="cancelled">Cancelled</option></select>
       </div>
       {loadError && <p className="activities-error" role="alert">{loadError} <button type="button" onClick={load}>Retry</button></p>}
       {noFilters && offlineDraft && <><p className="activities-group-label">ON THIS PHONE</p>{draftCard(offlineDraft, true)}</>}
@@ -2706,9 +2773,9 @@ function App() {
   if (!user) return <UserLogin onSignedIn={(signedIn) => { setUser(signedIn); setActivePage("home"); }} />;
   return <div className="app-shell">
     <div className="gold-pattern" />
-    {isCreating ? <CreateActivation key={activationKey} initialActivity={selectedActivity} currentUser={user} people={people} onClose={() => setActivePage("activations")} /> : activePage === "activations" || activePage === "activities" ?
+    {isCreating ? <CreateActivation key={activationKey} initialActivity={selectedActivity} currentUser={user} people={people} onClose={() => setActivePage("activations")} onHome={() => setActivePage("home")} /> : activePage === "activations" || activePage === "activities" ?
       <><ActivitiesList onCreate={startNew} onOpen={openActivity}/><BottomNavigation activePage="activations" onNavigate={setActivePage}/></> :
-      <><Header user={user} onSignOut={signOutUser}/><main className="main-content">{activePage === "home" ? <><AttentionCard user={user}/><ModulesSection onOpen={page => page === "create" ? startNew() : setActivePage(page)}/></> : <PlaceholderPage page={activePage} onBack={() => setActivePage("home")}/>}</main><BottomNavigation activePage={activePage} onNavigate={setActivePage}/></>}
+      <><Header user={user} onSignOut={signOutUser}/><main className="main-content">{activePage === "home" ? <><AttentionCard user={user}/><ModulesSection user={user} onOpen={page => page === "create" ? startNew() : setActivePage(page)}/></> : <PlaceholderPage page={activePage} onBack={() => setActivePage("home")}/>}</main><BottomNavigation activePage={activePage} onNavigate={setActivePage}/></>}
   </div>;
 }
 export default App;

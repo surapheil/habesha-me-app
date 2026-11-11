@@ -121,6 +121,11 @@ export function createApi(client) {
       if (error) await fail(error);
       return api.getActivity(id);
     },
+    async reopen(id) {
+      const { error } = await client.rpc("reopen_activity", { p_activity: id });
+      if (error) await fail(error);
+      return api.getActivity(id);
+    },
     async cancel(id) {
       const { error } = await client.rpc("cancel_activity", { p_activity: id });
       if (error) await fail(error);

@@ -1414,3 +1414,9 @@ button:focus-visible {
 .activities-code { color:#8a7a55; font-family:monospace; font-size:10px; font-weight:400; }
 .admin-loading { color:#777; font-size:12px; }
 .post-decision-actions button:disabled, .wizard-continue-button:disabled { opacity:.6; }
+
+/* Home button in the activity wizard header; "being edited" status */
+.activation-header.with-home { justify-content:space-between; padding-left:max(16px, calc((100% - 406px) / 2)); padding-right:max(16px, calc((100% - 406px) / 2)); }
+.activation-home-button { display:flex; align-items:center; justify-content:center; width:42px; height:42px; border:1px solid #d4c9a9; border-radius:10px; background:transparent; color:#fff; cursor:pointer; }
+.activation-home-button:hover { background:rgb(255 255 255 / 10%); }
+.activities-status.status-being-edited, .post-status.status-being-edited { border-color:#3b6fb6; background:#e8f0fb; color:#244f8a; }
