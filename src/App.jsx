@@ -334,7 +334,9 @@ function BottomNavigation({ activePage, onNavigate }) {
 }
 
 const BRANDS = ["Habesha", "Habesha Kostara", "Habesha Draught", "Negus", "Feta", "Kidame"];
-const DIVISIONS = ["Addis Ababa", "Central", "East", "North East", "North West", "South", "West"];
+// "National" covers every city: choosing it sets the city to "National" (feedback 9/11, page 2).
+const NATIONAL = "National";
+const DIVISIONS = ["Addis Ababa", "Central", "East", "North East", "North West", "South", "West", NATIONAL];
 const STATUS_LABELS = {
   submitted: "PENDING",
   validated: "APPROVED",
@@ -1423,11 +1425,15 @@ function CreateActivation({ onClose, onHome, initialActivity = null, approverMod
                             type="checkbox"
                             checked={division.includes(item)}
                             onChange={(event) => {
-                              const next = event.target.checked
-                                ? [...division, item]
-                                : division.filter((value) => value !== item);
+                              // National is exclusive: it replaces the other divisions, and they replace it.
+                              const next = !event.target.checked
+                                ? division.filter((value) => value !== item)
+                                : item === NATIONAL ? [NATIONAL]
+                                : [...division.filter((value) => value !== NATIONAL), item];
                               setDivision(next);
-                              if (city && divisionsAllMapped(divisionCities, next) && !citiesFor(divisionCities, next).includes(city)) setCity("");
+                              if (next.includes(NATIONAL)) setCity(NATIONAL);
+                              else if (city === NATIONAL) setCity("");
+                              else if (city && divisionsAllMapped(divisionCities, next) && !citiesFor(divisionCities, next).includes(city)) setCity("");
                               setDraftSaved(false);
                             }}
                           />
@@ -1459,6 +1465,8 @@ function CreateActivation({ onClose, onHome, initialActivity = null, approverMod
                   type="text"
                   list="ethiopian-cities"
                   value={city}
+                  readOnly={division.includes(NATIONAL)}
+                  className={division.includes(NATIONAL) ? "city-national" : undefined}
                   onChange={(event) => {
                     setCity(event.target.value);
                     setDraftSaved(false);
@@ -1468,6 +1476,7 @@ function CreateActivation({ onClose, onHome, initialActivity = null, approverMod
                   required
                 />
 
+                {division.includes(NATIONAL) && <p className="field-help">National activity: it covers all cities.</p>}
                 <datalist id="ethiopian-cities">
                   {citiesFor(divisionCities, division).map((item) => (
                     <option key={item} value={item} />

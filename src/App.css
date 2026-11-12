@@ -1440,3 +1440,6 @@ button:focus-visible {
 .config-history { margin:0; padding:0; list-style:none; font-size:12px; }
 .config-history li { display:flex; flex-wrap:wrap; gap:6px; align-items:baseline; padding:7px 0; border-bottom:1px solid #f0ece5; }
 .config-history small { color:#888; }
+
+/* City field locked for a National activity */
+.form-field input.city-national { background:#f3f1ec; color:#555; cursor:not-allowed; }

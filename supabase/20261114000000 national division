@@ -1,0 +1,4 @@
+-- "National" division: an activity that covers every city (feedback 9/11, page 2).
+-- It has no cities of its own; the app sets the city to "National". Safe to run more than once.
+insert into public.divisions (name) values ('National')
+on conflict (name) do update set active = true;
