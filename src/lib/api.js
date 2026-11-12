@@ -131,6 +131,47 @@ export function createApi(client) {
       if (error) await fail(error);
       return api.getActivity(id);
     },
+    // Divisions and cities from configuration (FR-203): active ones only, for the forms and filters.
+    async getReferentials() {
+      const [divisions, cities] = await Promise.all([
+        client.from("divisions").select("id, name").eq("active", true),
+        client.from("cities").select("name, division_id").eq("active", true),
+      ]);
+      if (divisions.error) await fail(divisions.error);
+      if (cities.error) await fail(cities.error);
+      const byName = (x, y) => x.localeCompare(y, undefined, { sensitivity: "base" });
+      const names = Object.fromEntries(divisions.data.map(d => [d.id, d.name]));
+      const map = Object.fromEntries(divisions.data.map(d => [d.name, []]));
+      cities.data.forEach(c => { if (names[c.division_id]) map[names[c.division_id]].push(c.name); });
+      Object.values(map).forEach(list => list.sort(byName));
+      return { divisions: Object.keys(map).sort(byName), cities: map };
+    },
+    // Owner/Admin configuration screen: everything, including deactivated entries.
+    async listConfiguration() {
+      const [divisions, cities, history] = await Promise.all([
+        client.from("divisions").select("id, name, active").order("name"),
+        client.from("cities").select("id, name, division_id, active").order("name"),
+        client.from("config_history").select("table_name, action, old_value, new_value, at, actor:profiles(full_name)").order("at", { ascending: false }).limit(15),
+      ]);
+      for (const result of [divisions, cities, history]) if (result.error) await fail(result.error);
+      return { divisions: divisions.data, cities: cities.data, history: history.data };
+    },
+    async addCity(name, divisionId) {
+      const { error } = await client.from("cities").insert({ name: name.trim(), division_id: divisionId });
+      if (error) await fail(error.code === "23505" ? { message: "That city already exists in this division." } : error);
+    },
+    async updateCity(id, changes) {
+      const { error } = await client.from("cities").update(changes).eq("id", id);
+      if (error) await fail(error.code === "23505" ? { message: "That city already exists in this division." } : error);
+    },
+    async addDivision(name) {
+      const { error } = await client.from("divisions").insert({ name: name.trim() });
+      if (error) await fail(error.code === "23505" ? { message: "That division already exists." } : error);
+    },
+    async updateDivision(id, changes) {
+      const { error } = await client.from("divisions").update(changes).eq("id", id);
+      if (error) await fail(error.code === "23505" ? { message: "That division already exists." } : error);
+    },
     async deleteDraft(id) {
       const { error } = await client.from("activities").delete().eq("id", id);
       if (error) await fail(error);
