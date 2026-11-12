@@ -1443,3 +1443,6 @@ button:focus-visible {
 
 /* City field locked for a National activity */
 .form-field input.city-national { background:#f3f1ec; color:#555; cursor:not-allowed; }
+
+/* Whole date field is clickable */
+input[type="date"]:not(:disabled):not([readonly]) { cursor:pointer; }

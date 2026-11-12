@@ -144,7 +144,9 @@ export function createApi(client) {
       const map = Object.fromEntries(divisions.data.map(d => [d.name, []]));
       cities.data.forEach(c => { if (names[c.division_id]) map[names[c.division_id]].push(c.name); });
       Object.values(map).forEach(list => list.sort(byName));
-      return { divisions: Object.keys(map).sort(byName), cities: map };
+      // National first, then the divisions alphabetically.
+      const divisionOrder = (x, y) => (y === "National") - (x === "National") || byName(x, y);
+      return { divisions: Object.keys(map).sort(divisionOrder), cities: map };
     },
     // Owner/Admin configuration screen: everything, including deactivated entries.
     async listConfiguration() {

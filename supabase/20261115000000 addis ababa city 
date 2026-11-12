@@ -1,0 +1,4 @@
+-- Addis Ababa division includes the city of Addis Ababa itself. Safe to run more than once.
+insert into public.cities (division_id, name)
+select id, 'Addis Ababa' from public.divisions where name = 'Addis Ababa'
+on conflict (division_id, name) do update set active = true;

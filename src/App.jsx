@@ -336,7 +336,7 @@ function BottomNavigation({ activePage, onNavigate }) {
 const BRANDS = ["Habesha", "Habesha Kostara", "Habesha Draught", "Negus", "Feta", "Kidame"];
 // "National" covers every city: choosing it sets the city to "National" (feedback 9/11, page 2).
 const NATIONAL = "National";
-const DIVISIONS = ["Addis Ababa", "Central", "East", "North East", "North West", "South", "West", NATIONAL];
+const DIVISIONS = [NATIONAL, "Addis Ababa", "Central", "East", "North East", "North West", "South", "West"];
 const STATUS_LABELS = {
   submitted: "PENDING",
   validated: "APPROVED",
@@ -351,7 +351,7 @@ const statusClass = (status) => `status-${(STATUS_LABELS[status] || "PENDING").t
 // Built-in copy of "Cities by Habesha Divisions" (Nov 2026). Used only if the configured list in the
 // database can't be loaded; Owner/Admin maintains the real list in the admin dashboard (Cities & divisions).
 const DIVISION_CITIES = {
-  "Addis Ababa": ["Alemgena-Sebeta", "Burayu"],
+  "Addis Ababa": ["Addis Ababa", "Alemgena-Sebeta", "Burayu"],
   "Central": ["Alamata", "Alemketema", "Debrebirhan", "Deneba", "Dessie", "Kombolcha", "Logia", "Mehalmeda", "Mekanesealm", "Mersa", "Sekota", "Shewarobit", "Woldiya"],
   "East": ["Adama", "Assela-bekoji", "Awash 40", "Bale Genir", "Bishoftu", "Chelenko", "Chiro", "Diredawa", "Harar", "Jigjiga", "Minjar", "Modjo", "Robe"],
   "North East": ["A.Enticho", "Abiyiad", "Adidaro", "Adigebru", "Adigrat-2", "Adihageray", "Adinebrid", "Adwa", "Axum", "EdagaHamus T2", "Endabaguna", "Hawzen", "Hintsats", "Ksadgaba", "Lachi", "mehonie", "Mekele", "Mekele T1", "Mekele T2", "Mekele T3", "Mekele T4", "myhanse", "Quiha Adigudem T1", "Sheraro", "Shire 1", "Shire 2", "T.Enticho", "Wukro", "Zana"],
@@ -369,6 +369,16 @@ const citiesFor = (map, selected) => !selected.length ? allCitiesOf(map) : [...n
 ])];
 // Question bank spine, U19 "How will the primary KPI be measured?" (row 30).
 const MEASUREMENT_OPTIONS = ["Field count sheet", "QR post-event survey", "QR survey + field count", "Outlet depletion / crates sold", "Trade census / outlet check", "Platform analytics (digital)", "Media post-buy report", "Brand health / campaign recall study", "Partner rights-delivery checklist", "Draught throughput log", "Sampling tally + purchase check", "FGD / interview guide", "Other"];
+// 2026 strategy pillars by brand. Habesha Kostara and Habesha Draught use Habesha's pillars (to confirm).
+const HABESHA_PILLARS = ["Integrate the Functional into the Emotional Narrative", "Win in Outlet During Consumption Hours", "RTM/Stockists", "Other"];
+const STRATEGY_PILLARS = {
+  "Habesha": HABESHA_PILLARS,
+  "Habesha Kostara": HABESHA_PILLARS,
+  "Habesha Draught": HABESHA_PILLARS,
+  "Negus": ["Drive Brand Differentiation", "Accelerate penetration and oos management", "Drive balanced growth", "Other"],
+  "Feta": ["Defend Our Strongholds", "Accelerate Penetration", "Break the Discount Trap", "Other"],
+  "Kidame": ["Penetration", "RRP Compliance", "Tactical Value chain", "Other"],
+};
 const EIGHT_STEP_TYPES = ["Sponsorship", "Trade/POS", "Media/ATL", "Partnership"];
 const stepCountFor = (type) => type === "Other" ? 6 : EIGHT_STEP_TYPES.includes(type) ? 8 : 7;
 
@@ -763,12 +773,8 @@ function CreateActivation({ onClose, onHome, initialActivity = null, approverMod
 
   const counterpartOptions = ["Trade Marketing", "Field Sales Manager", "Other"];
 
-  const strategyPillars = [
-    "BB1 - Functional into emotional",
-    "BB2 - Win in outlet",
-    "BB3 - RTM / stockists",
-    "Brand MWB - other",
-  ];
+  // 2026 strategy pillars, per brand (step 2 only offers the chosen brand's pillars).
+  const strategyPillars = STRATEGY_PILLARS[brand] || [];
 
   const activityObjectives = [
     "Build salience",
@@ -1365,6 +1371,8 @@ function CreateActivation({ onClose, onHome, initialActivity = null, approverMod
                   value={brand}
                   onChange={(event) => {
                     setBrand(event.target.value);
+                    // A pillar belongs to a brand: clear it when the brand changes to one without it.
+                    if (strategyPillar && !(STRATEGY_PILLARS[event.target.value] || []).includes(strategyPillar)) setStrategyPillar("");
                     setDraftSaved(false);
                   }}
                   required
@@ -1435,6 +1443,7 @@ function CreateActivation({ onClose, onHome, initialActivity = null, approverMod
                               else if (city === NATIONAL) setCity("");
                               else if (city && divisionsAllMapped(divisionCities, next) && !citiesFor(divisionCities, next).includes(city)) setCity("");
                               setDraftSaved(false);
+                              setDivisionOpen(false);
                             }}
                           />
                           <span>{item}</span>
@@ -2845,6 +2854,16 @@ function App() {
   };
   const startNew = () => { setSelectedActivity(null); setActivationKey(v => v + 1); setActivePage("create"); };
   const [isAdmin, setIsAdmin] = useState(isAdminRoute);
+  // Date fields: clicking anywhere on the field opens the calendar, not only the calendar icon.
+  useEffect(() => {
+    const openPicker = (event) => {
+      const input = event.target;
+      if (!(input instanceof HTMLInputElement) || input.type !== "date" || input.disabled || input.readOnly) return;
+      try { input.showPicker(); } catch { /* older browsers: the icon still works */ }
+    };
+    document.addEventListener("click", openPicker);
+    return () => document.removeEventListener("click", openPicker);
+  }, []);
   useEffect(() => {
     const onHashChange = () => {
       const admin = isAdminRoute();
