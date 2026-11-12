@@ -346,29 +346,31 @@ const STATUS_LABELS = {
 };
 const statusLabel = (status) => STATUS_LABELS[status] || "PENDING";
 const statusClass = (status) => `status-${(STATUS_LABELS[status] || "PENDING").toLowerCase().replace(" ", "-")}`;
-// Divisions and their cities, as on the live reference app (screenshots of 11 Nov 2026).
+// Built-in copy of "Cities by Habesha Divisions" (Nov 2026). Used only if the configured list in the
+// database can't be loaded; Owner/Admin maintains the real list in the admin dashboard (Cities & divisions).
 const DIVISION_CITIES = {
-  "Addis Ababa": ["Addis-Abeba", "Burayu", "Sebeta"],
-  "Central": ["Alamata", "Alem Ketema", "Debre Berhan", "Deneba", "Dessie", "Kombolcha", "Logia", "Mehal Meda", "Mekane Selam", "Mersa", "Sekota", "Shewa Robit", "Weldiya"],
-  "East": ["Adama", "Assella", "Awash 40", "Bale Ginir", "Balé Robe", "Bishoftu", "Chelenko", "Chiro", "Dire Dawa", "Djidjiga", "Harar", "Minjar", "Mojo"],
-  "North East": ["A. Enticho", "Abiy Addi", "Adi Daro", "Adi Hageray", "Adi Nebrid", "Adigebru", "Adigrat", "Adwa", "Aksoum", "Edaga Hamus T2", "Endabaguna", "Hawzen", "Hintsats", "Inda Selassié", "Kisad Gaba", "Lachi", "Mehoni", "Mekele", "Mekele T1", "Mekele T2", "Mekele T3", "Mekele T4", "Myhanse", "Quiha Adigudem T1", "Sheraro", "Shire 2", "T. Enticho", "Wukro", "Zana"],
-  "North West": ["Abderafi", "Abrha Jira", "Addis Zemen", "Adi Arkay", "Adi Goshu Baker", "Adi Remets Maygaba", "Ashire", "Azezo", "Baher Dar", "Bahir Dar 2", "Bahir Dar Abay Mado", "Bichena", "Bure", "Bure Kuchi", "Chagni", "Dabat", "Dangila", "Dangila 2", "Dansha", "Debark", "Debre Marqos", "Debre Tabor", "Delgi", "Ebinat", "Este", "Finote Selam", "Gilgel Beles", "Gondar", "Humera", "Jawi", "Kokit", "Kosober", "Lideta", "Maksegnit", "Maraki College", "May Kadra", "May Tsebri", "Merawi", "Metema", "Mirab Armachiho", "Mota", "Negade Bahir", "Piassa", "Quara", "Sanja", "Shaura", "Shehedi", "Shinfa", "Soroka", "Tikil Dingay", "Tilili", "Wembera", "Woreta"],
-  "South": ["Alaba Kulito", "Arba Minch", "Awasa", "Dila", "Hosaena", "Moyale", "Negele", "Sawla", "Shakiso", "Shashamané", "Sodo", "Yabelo", "Yirgalem"],
-  "West": ["Asosa", "Bonga", "Dima", "Gambela", "Hagere Hiywet", "Jimma", "Metu", "Mizan Teferi", "Shabench", "Tepi", "Waliso", "Welkite"],
+  "Addis Ababa": ["Alemgena-Sebeta", "Burayu"],
+  "Central": ["Alamata", "Alemketema", "Debrebirhan", "Deneba", "Dessie", "Kombolcha", "Logia", "Mehalmeda", "Mekanesealm", "Mersa", "Sekota", "Shewarobit", "Woldiya"],
+  "East": ["Adama", "Assela-bekoji", "Awash 40", "Bale Genir", "Bishoftu", "Chelenko", "Chiro", "Diredawa", "Harar", "Jigjiga", "Minjar", "Modjo", "Robe"],
+  "North East": ["A.Enticho", "Abiyiad", "Adidaro", "Adigebru", "Adigrat-2", "Adihageray", "Adinebrid", "Adwa", "Axum", "EdagaHamus T2", "Endabaguna", "Hawzen", "Hintsats", "Ksadgaba", "Lachi", "mehonie", "Mekele", "Mekele T1", "Mekele T2", "Mekele T3", "Mekele T4", "myhanse", "Quiha Adigudem T1", "Sheraro", "Shire 1", "Shire 2", "T.Enticho", "Wukro", "Zana"],
+  "North West": ["Abderafi", "Abrihajira", "Addis Zemen", "Adi Arkay", "Adigoshu-Baker", "Adiremts-Maygaba", "Ashire", "Azezo", "Bahirdar-Abay Mado", "Bahirdar1", "Bahirdar2", "bichena", "bure", "Bure-Kuchi", "Chagni", "Dabat", "Dangila", "Dangila 2", "Dansha", "Debark", "Debremarkose", "DebreTabor", "Delgi", "Ebinat", "Este", "Finoteselam", "Gelgel Beles", "Gondar", "Humera", "Jawi", "Kokit", "Kosober", "Lideta", "Maksegnit", "Maraki College", "Maykadra", "Maytsebri", "Merawi", "Metema", "Mirab armachiho", "Mota", "Negade Bahir", "Piassa", "Quara", "Sanja", "Shaura", "Shehdi", "Shinfa", "Soroka", "Tikildingaye", "Tilili", "Wembera", "Woreta"],
+  "South": ["Arbaminch", "Dila", "Halaba", "Hawassa", "Hosaena", "Moyale", "Negelle Borena", "Sawla", "Shakiso", "Shashemane", "Wolayita", "Yabelo", "Yirgalem"],
+  "West": ["Ambo", "Assosa Town", "Bonga", "Dima", "Gambella", "Jimma", "Metu", "Mizan", "shabench", "Tepi", "Woliso", "Wolkitie"],
 };
-const ALL_CITIES = [...new Set(Object.values(DIVISION_CITIES).flat())];
-const divisionsAllMapped = (selected) => selected.length > 0 && selected.every(item => DIVISION_CITIES[item]);
+const byName = (x, y) => x.localeCompare(y, undefined, { sensitivity: "base" });
+const allCitiesOf = (map) => [...new Set(Object.values(map).flat())].sort(byName);
+const divisionsAllMapped = (map, selected) => selected.length > 0 && selected.every(item => map[item]?.length);
 // No division selected: every city. Otherwise: the cities of the selected divisions only.
-const citiesFor = (selected) => !selected.length ? ALL_CITIES : [...new Set([
-  ...selected.flatMap(item => DIVISION_CITIES[item] || []),
-  ...(divisionsAllMapped(selected) ? [] : ALL_CITIES),
+const citiesFor = (map, selected) => !selected.length ? allCitiesOf(map) : [...new Set([
+  ...selected.flatMap(item => map[item] || []),
+  ...(divisionsAllMapped(map, selected) ? [] : allCitiesOf(map)),
 ])];
 // Question bank spine, U19 "How will the primary KPI be measured?" (row 30).
 const MEASUREMENT_OPTIONS = ["Field count sheet", "QR post-event survey", "QR survey + field count", "Outlet depletion / crates sold", "Trade census / outlet check", "Platform analytics (digital)", "Media post-buy report", "Brand health / campaign recall study", "Partner rights-delivery checklist", "Draught throughput log", "Sampling tally + purchase check", "FGD / interview guide", "Other"];
 const EIGHT_STEP_TYPES = ["Sponsorship", "Trade/POS", "Media/ATL", "Partnership"];
 const stepCountFor = (type) => type === "Other" ? 6 : EIGHT_STEP_TYPES.includes(type) ? 8 : 7;
 
-function CreateActivation({ onClose, onHome, initialActivity = null, approverMode = false, onDecision, currentUser = null, api = fieldApi, people = [] }) {
+function CreateActivation({ onClose, onHome, initialActivity = null, approverMode = false, onDecision, currentUser = null, api = fieldApi, people = [], referentials = null }) {
   // Stage 0 is the activity-type selection.
   // Stage 1 is "The activity".
   // Stage 2 is "Strategy and timing"; stage 3 is "Ownership".
@@ -752,7 +754,8 @@ function CreateActivation({ onClose, onHome, initialActivity = null, approverMod
   // NF-102-002: a brand manager only creates activations for their assigned brands.
   const brands = currentUser?.brands?.length && !approverMode ? BRANDS.filter(item => currentUser.brands.includes(item)) : BRANDS;
 
-  const divisions = DIVISIONS;
+  const divisionCities = referentials?.cities || DIVISION_CITIES;
+  const divisions = referentials?.divisions || DIVISIONS;
 
   const accountablePeople = people.length ? people : (currentUser?.name ? [currentUser.name] : []);
 
@@ -1424,7 +1427,7 @@ function CreateActivation({ onClose, onHome, initialActivity = null, approverMod
                                 ? [...division, item]
                                 : division.filter((value) => value !== item);
                               setDivision(next);
-                              if (city && divisionsAllMapped(next) && !citiesFor(next).includes(city)) setCity("");
+                              if (city && divisionsAllMapped(divisionCities, next) && !citiesFor(divisionCities, next).includes(city)) setCity("");
                               setDraftSaved(false);
                             }}
                           />
@@ -1466,7 +1469,7 @@ function CreateActivation({ onClose, onHome, initialActivity = null, approverMod
                 />
 
                 <datalist id="ethiopian-cities">
-                  {citiesFor(division).map((item) => (
+                  {citiesFor(divisionCities, division).map((item) => (
                     <option key={item} value={item} />
                   ))}
                 </datalist>
@@ -2523,7 +2526,108 @@ function isReportLate(item) {
   return new Date(`${item.endDate}T00:00:00`) < today;
 }
 
-function AdminApp({ onExit, user, onSignOut, api = adminApi, people = [] }) {
+// Owner/Admin: maintain divisions and cities (FR-203-001: deactivate, never delete; NF-102-003: changes logged).
+function AdminConfiguration({ api, onBack, onChanged }) {
+  const [config, setConfig] = useState(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [divisionFilter, setDivisionFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [showInactive, setShowInactive] = useState(false);
+  const [newCity, setNewCity] = useState({ name: "", divisionId: "" });
+  const [newDivision, setNewDivision] = useState("");
+  const [editing, setEditing] = useState(null); // { kind: "city" | "division", id, value }
+  const load = () => api.listConfiguration().then(data => { setConfig(data); setError(""); }).catch(e => setError(e.message));
+  useEffect(() => { load(); }, [api]); // eslint-disable-line react-hooks/exhaustive-deps
+  const run = async (action) => {
+    setBusy(true); setError("");
+    try { await action(); await load(); if (onChanged) onChanged(); setEditing(null); }
+    catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  };
+  if (!config) return <main className="admin-main"><button type="button" className="admin-back" onClick={onBack}>← Dashboard</button><p className="admin-loading">{error || "Loading…"}</p></main>;
+  const divisionName = Object.fromEntries(config.divisions.map(d => [d.id, d.name]));
+  const cities = config.cities
+    .filter(c => (showInactive || c.active) && (!divisionFilter || String(c.division_id) === divisionFilter) && c.name.toLowerCase().includes(search.trim().toLowerCase()))
+    .sort((a, b) => byName(divisionName[a.division_id] || "", divisionName[b.division_id] || "") || byName(a.name, b.name));
+  const nameCell = (kind, item) => editing && editing.kind === kind && editing.id === item.id
+    ? <span className="config-edit"><input aria-label={`New name for ${item.name}`} value={editing.value} onChange={e => setEditing({ ...editing, value: e.target.value })} autoFocus />
+        <button type="button" disabled={busy || !editing.value.trim()} onClick={() => run(() => kind === "city" ? api.updateCity(item.id, { name: editing.value.trim() }) : api.updateDivision(item.id, { name: editing.value.trim() }))}>Save</button>
+        <button type="button" className="config-link" onClick={() => setEditing(null)}>Cancel</button></span>
+    : <span className={item.active ? "" : "config-inactive"}>{item.name}</span>;
+  const actions = (kind, item) => <span className="config-actions">
+    <button type="button" className="config-link" disabled={busy} onClick={() => setEditing({ kind, id: item.id, value: item.name })}>Rename</button>
+    <button type="button" className="config-link" disabled={busy} onClick={() => run(() => kind === "city" ? api.updateCity(item.id, { active: !item.active }) : api.updateDivision(item.id, { active: !item.active }))}>{item.active ? "Deactivate" : "Reactivate"}</button>
+  </span>;
+  return <main className="admin-main">
+    <button type="button" className="admin-back" onClick={onBack}>← Dashboard</button>
+    <h1 className="admin-page-title">Cities & divisions</h1>
+    <p className="admin-page-subtitle">Changes apply to the activity forms straight away. Nothing is deleted: deactivated entries disappear from the forms and can be reactivated. Activities already saved keep the name they were saved with.</p>
+    {error && <p className="activities-error" role="alert">{error}</p>}
+
+    <section className="config-card">
+      <h2>Add a city</h2>
+      <div className="config-row">
+        <select aria-label="Division for the new city" value={newCity.divisionId} onChange={e => setNewCity({ ...newCity, divisionId: e.target.value })}>
+          <option value="">Division</option>{config.divisions.filter(d => d.active).map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+        </select>
+        <input aria-label="New city name" placeholder="City name" value={newCity.name} onChange={e => setNewCity({ ...newCity, name: e.target.value })} />
+        <button type="button" disabled={busy || !newCity.name.trim() || !newCity.divisionId} onClick={() => run(async () => { await api.addCity(newCity.name, Number(newCity.divisionId)); setNewCity({ name: "", divisionId: newCity.divisionId }); })}>Add city</button>
+      </div>
+    </section>
+
+    <section className="config-card">
+      <div className="config-head">
+        <h2>Cities <small>({config.cities.filter(c => c.active).length} active)</small></h2>
+        <div className="config-row">
+          <select aria-label="Filter by division" value={divisionFilter} onChange={e => setDivisionFilter(e.target.value)}>
+            <option value="">All divisions</option>{config.divisions.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+          <input aria-label="Search cities" placeholder="Search" value={search} onChange={e => setSearch(e.target.value)} />
+          <label className="config-check"><input type="checkbox" checked={showInactive} onChange={e => setShowInactive(e.target.checked)} /> Show deactivated</label>
+        </div>
+      </div>
+      <div className="admin-table-wrap"><table className="admin-table">
+        <thead><tr><th>City</th><th>Division</th><th>Status</th><th></th></tr></thead>
+        <tbody>{cities.map(c => <tr key={c.id}>
+          <td>{nameCell("city", c)}</td>
+          <td>{divisionName[c.division_id]}</td>
+          <td>{c.active ? "Active" : "Deactivated"}</td>
+          <td>{actions("city", c)}</td>
+        </tr>)}</tbody>
+      </table></div>
+      {!cities.length && <p className="admin-empty">No cities match.</p>}
+    </section>
+
+    <section className="config-card">
+      <h2>Divisions</h2>
+      <div className="config-row">
+        <input aria-label="New division name" placeholder="New division name" value={newDivision} onChange={e => setNewDivision(e.target.value)} />
+        <button type="button" disabled={busy || !newDivision.trim()} onClick={() => run(async () => { await api.addDivision(newDivision); setNewDivision(""); })}>Add division</button>
+      </div>
+      <div className="admin-table-wrap"><table className="admin-table">
+        <thead><tr><th>Division</th><th>Active cities</th><th>Status</th><th></th></tr></thead>
+        <tbody>{config.divisions.map(d => <tr key={d.id}>
+          <td>{nameCell("division", d)}</td>
+          <td>{config.cities.filter(c => c.division_id === d.id && c.active).length}</td>
+          <td>{d.active ? "Active" : "Deactivated"}</td>
+          <td>{actions("division", d)}</td>
+        </tr>)}</tbody>
+      </table></div>
+    </section>
+
+    <section className="config-card">
+      <h2>Recent changes</h2>
+      {config.history.length ? <ul className="config-history">{config.history.map((h, i) => <li key={i}>
+        <strong>{h.action === "insert" ? "Added" : h.old_value?.name !== h.new_value?.name ? "Renamed" : h.new_value?.active ? "Reactivated" : "Deactivated"}</strong>{" "}
+        {h.table_name === "cities" ? "city" : "division"} {h.action === "update" && h.old_value?.name !== h.new_value?.name ? `${h.old_value?.name} → ${h.new_value?.name}` : h.new_value?.name}
+        <small>{[h.actor?.full_name, new Date(h.at).toLocaleString()].filter(Boolean).join(" · ")}</small>
+      </li>)}</ul> : <p className="admin-loading">No changes yet.</p>}
+    </section>
+  </main>;
+}
+
+function AdminApp({ onExit, user, onSignOut, api = adminApi, people = [], referentials = null, onReferentialsChanged }) {
   const [page, setPage] = useState("home");
   const scopedBrands = user?.role === "Brand Lead" && user.brands?.length ? user.brands : null;
   const [items, setItems] = useState([]);
@@ -2598,7 +2702,7 @@ function AdminApp({ onExit, user, onSignOut, api = adminApi, people = [] }) {
         <option value="">All brands</option>{(scopedBrands || BRANDS).map(item => <option key={item} value={item}>{item}</option>)}
       </select>
       <select aria-label="Division" value={filters.division} onChange={e => setFilters(f => ({...f, division: e.target.value}))}>
-        <option value="">All divisions</option>{DIVISIONS.map(item => <option key={item} value={item}>{item}</option>)}
+        <option value="">All divisions</option>{(referentials?.divisions || DIVISIONS).map(item => <option key={item} value={item}>{item}</option>)}
       </select>
       <select aria-label="Activity type" value={filters.type} onChange={e => setFilters(f => ({...f, type: e.target.value}))}>
         <option value="">All types</option>{activityTypes.map(item => <option key={item} value={item}>{item}</option>)}
@@ -2620,7 +2724,7 @@ function AdminApp({ onExit, user, onSignOut, api = adminApi, people = [] }) {
   let content;
   if (page === "activity" && selected) {
     content = <div className="admin-activity-detail">
-      <CreateActivation key={selected.id} initialActivity={selected} approverMode currentUser={user} api={api} people={people} onClose={() => { refresh(); openPage(returnPage); }} onDecision={refresh} />
+      <CreateActivation key={selected.id} initialActivity={selected} approverMode currentUser={user} api={api} people={people} referentials={referentials} onClose={() => { refresh(); openPage(returnPage); }} onDecision={refresh} />
     </div>;
   } else if (page === "approvals") {
     const list = approvalTab === "pending" ? pending : decided;
@@ -2635,6 +2739,8 @@ function AdminApp({ onExit, user, onSignOut, api = adminApi, people = [] }) {
       </div>
       <div className="admin-list">{list.length ? list.map(item => activityRow(item, "approvals")) : <p className="admin-empty">{approvalTab === "pending" ? "No activities are waiting for your decision." : "No decisions yet for these filters."}</p>}</div>
     </main>;
+  } else if (page === "configuration" && user?.role === "Owner/Admin") {
+    content = <AdminConfiguration api={api} onBack={() => openPage("home")} onChanged={onReferentialsChanged} />;
   } else if (page === "brand-managers") {
     content = <main className="admin-main">
       <button type="button" className="admin-back" onClick={() => openPage("home")}>← Dashboard</button>
@@ -2709,7 +2815,7 @@ function AdminApp({ onExit, user, onSignOut, api = adminApi, people = [] }) {
             <button type="button" className="admin-user" aria-expanded={menuOpen} onClick={() => { setMenuOpen(open => !open); setNotificationsOpen(false); }}>
               <span className="admin-avatar">{user?.initials}</span><span>{user?.shortName}</span><Icon name="chevron" size={14} />
             </button>
-            {menuOpen && <div className="admin-popover admin-menu"><p className="admin-menu-identity"><strong>{user?.name}</strong><small>{user?.role}</small></p><button type="button" onClick={onExit}>Open the brand manager app</button><button type="button" onClick={onSignOut}>Sign out</button></div>}
+            {menuOpen && <div className="admin-popover admin-menu"><p className="admin-menu-identity"><strong>{user?.name}</strong><small>{user?.role}</small></p>{user?.role === "Owner/Admin" && <button type="button" onClick={() => { setMenuOpen(false); openPage("configuration"); }}>Cities & divisions</button>}<button type="button" onClick={onExit}>Open the brand manager app</button><button type="button" onClick={onSignOut}>Sign out</button></div>}
           </div>
         </div>
       </div>
@@ -2743,6 +2849,11 @@ function App() {
   const [adminUser, setAdminUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [people, setPeople] = useState([]);
+  const [referentials, setReferentials] = useState(null);
+  const loadReferentials = () => {
+    const api = isAdmin ? adminApi : fieldApi;
+    api.getReferentials().then(setReferentials).catch(() => setReferentials(null)); // falls back to the built-in list
+  };
   useEffect(() => {
     Promise.all([authService.restore("field"), authService.restore("admin")]).then(([field, admin]) => {
       setUser(field);
@@ -2756,7 +2867,10 @@ function App() {
   }, []);
   useEffect(() => {
     const api = isAdmin ? adminApi : fieldApi;
-    if (isAdmin ? adminUser : user) api.listPeople().then(setPeople).catch(() => setPeople([]));
+    if (isAdmin ? adminUser : user) {
+      api.listPeople().then(setPeople).catch(() => setPeople([]));
+      loadReferentials();
+    }
   }, [isAdmin, user, adminUser]);
   const leaveAdmin = () => {
     if (window.location.pathname.startsWith("/manager-login")) window.history.pushState(null, "", "/");
@@ -2768,12 +2882,12 @@ function App() {
   const signOutAdmin = async () => { await authService.signOut("admin"); setAdminUser(null); };
   if (!authReady) return <div className="app-loading"><img src={habeshaLogoHorizontal} alt="Habesha" /></div>;
   if (isAdmin) return adminUser
-    ? <AdminApp user={adminUser} onExit={leaveAdmin} onSignOut={signOutAdmin} people={people} />
+    ? <AdminApp user={adminUser} onExit={leaveAdmin} onSignOut={signOutAdmin} people={people} referentials={referentials} onReferentialsChanged={loadReferentials} />
     : <AdminLogin onSignedIn={setAdminUser} />;
   if (!user) return <UserLogin onSignedIn={(signedIn) => { setUser(signedIn); setActivePage("home"); }} />;
   return <div className="app-shell">
     <div className="gold-pattern" />
-    {isCreating ? <CreateActivation key={activationKey} initialActivity={selectedActivity} currentUser={user} people={people} onClose={() => setActivePage("activations")} onHome={() => setActivePage("home")} /> : activePage === "activations" || activePage === "activities" ?
+    {isCreating ? <CreateActivation key={activationKey} initialActivity={selectedActivity} currentUser={user} people={people} referentials={referentials} onClose={() => setActivePage("activations")} onHome={() => setActivePage("home")} /> : activePage === "activations" || activePage === "activities" ?
       <><ActivitiesList onCreate={startNew} onOpen={openActivity}/><BottomNavigation activePage="activations" onNavigate={setActivePage}/></> :
       <><Header user={user} onSignOut={signOutUser}/><main className="main-content">{activePage === "home" ? <><AttentionCard user={user}/><ModulesSection user={user} onOpen={page => page === "create" ? startNew() : setActivePage(page)}/></> : <PlaceholderPage page={activePage} onBack={() => setActivePage("home")}/>}</main><BottomNavigation activePage={activePage} onNavigate={setActivePage}/></>}
   </div>;
